@@ -187,7 +187,9 @@ function App() {
                                 />
                               </div>
                             </div>
-                            <div>{repo.description}</div>
+                            <div className="whitespace-pre-wrap break-words">
+                              {repo.description}
+                            </div>
                           </a>
                         ))}
                     </div>
