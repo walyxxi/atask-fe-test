@@ -9,7 +9,7 @@ export default defineConfig(({ command }) => {
   };
 
   if (command !== "serve") {
-    config.base = "/atask-fe-test-waliyul-ardy/";
+    config.base = "/atask-fe-test/";
   }
 
   return config;
