@@ -13,8 +13,9 @@ export interface User {
   id: UserId;
   avatar_url: string;
   repos_url: string;
-  repos_data?: Array<Repo>;
+  repos_data: Array<Repo>;
   repos_open: boolean;
+  repos_loading: boolean;
 }
 
 export type Users = Array<User>;
