@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useCallback, useState } from "react";
-import { ToastContainer } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import cevronDownIcon from "./assets/icons/cevron-down.svg";
 import cevronUpIcon from "./assets/icons/cevron-up.svg";
@@ -10,7 +10,7 @@ import RepoSkaleton from "./components/RepoSkaleton";
 import UserSkaleton from "./components/UserSkaleton";
 import { githubApiDomain, githubApiKey } from "./constant";
 import { Repo, User, Users } from "./model";
-import { apiErrorHandler } from "./utils/api";
+import { apiErrorHandler, toastOptions } from "./utils/api";
 
 function App() {
   const [users, setUsers] = useState<Users>([]);
@@ -18,25 +18,18 @@ function App() {
   const [username, setUsername] = useState<string>("");
 
   const handleClearUsers = () => setUsers([]);
-  const handleClearSearch = () => {
-    setUsername("");
-    handleClearUsers();
-  };
+  const handleClearSearch = () => setUsername("");
 
   const handleChangeUsername = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUsername(e.target.value);
-    if (e.target.value === "") {
-      handleClearUsers();
-    }
+    if (e.target.value === "") handleClearUsers();
   };
 
   const handleKeyDownToogleUser = (
     e: React.KeyboardEvent<HTMLDivElement>,
     user: User
   ) => {
-    if (e.key === "Enter") {
-      handleToggleUser(user);
-    }
+    if (e.key === "Enter") handleToggleUser(user);
   };
 
   const handleSearch = useCallback(async () => {
@@ -51,6 +44,9 @@ function App() {
         }
       );
 
+      if (response.data.items.length < 1)
+        toast.info("No user found!", toastOptions);
+
       setUsers(
         response.data.items.map((item: User) => ({
           id: item.id,
@@ -60,6 +56,7 @@ function App() {
           repos_data: [],
           repos_open: false,
           repos_loading: false,
+          is_repos_fetched: false,
         }))
       );
     } catch (err) {
@@ -82,7 +79,7 @@ function App() {
             ...item,
             repos_open: !item.repos_open,
             repos_loading:
-              !item.repos_open && item.repos_data.length < 1 ? true : false,
+              !item.repos_open && !item.is_repos_fetched ? true : false,
           };
         } else {
           return item;
@@ -90,7 +87,7 @@ function App() {
       })
     );
 
-    if (!user.repos_open && user.repos_data.length < 1) {
+    if (!user.repos_open && !user.is_repos_fetched) {
       try {
         const response = await axios(user.repos_url);
 
@@ -101,6 +98,7 @@ function App() {
                 ...item,
                 repos_data: response.data,
                 repos_loading: false,
+                is_repos_fetched: true,
               };
             } else {
               return item;
@@ -179,6 +177,11 @@ function App() {
                   </div>
                   {user.repos_open && (
                     <div className="ml-6 mt-2 flex flex-col gap-2">
+                      {user.is_repos_fetched && user.repos_data.length < 1 && (
+                        <div className="px-3 py-2 rounded-md bg-slate-300 text-center">
+                          No Repositories
+                        </div>
+                      )}
                       {user.repos_loading && <RepoSkaleton />}
                       {!user.repos_loading &&
                         user.repos_data?.map((repo: Repo) => (

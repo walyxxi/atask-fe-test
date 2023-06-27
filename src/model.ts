@@ -16,6 +16,7 @@ export interface User {
   repos_data: Array<Repo>;
   repos_open: boolean;
   repos_loading: boolean;
+  is_repos_fetched: boolean;
 }
 
 export type Users = Array<User>;
