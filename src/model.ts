@@ -19,3 +19,8 @@ export interface User {
 }
 
 export type Users = Array<User>;
+
+export interface ApiErrResponse {
+  message: string;
+  status: number;
+}

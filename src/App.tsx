@@ -7,6 +7,10 @@ import { githubApiDomain, githubApiKey } from "./constant";
 import { User, Repo, Users } from "./model";
 import UserSkaleton from "./components/UserSkaleton";
 import RepoSkaleton from "./components/RepoSkaleton";
+import { apiErrorHandler } from "./utils/api";
+import axios, { AxiosError } from "axios";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   const [users, setUsers] = useState<Users>([]);
@@ -26,34 +30,51 @@ function App() {
     }
   };
 
-  const handleSearch = useCallback(() => {
+  const handleKeyDownToogleUser = (
+    e: React.KeyboardEvent<HTMLDivElement>,
+    user: User
+  ) => {
+    if (e.key === "Enter") {
+      handleToggleUser(user);
+    }
+  };
+
+  const handleSearch = useCallback(async () => {
     setLoading(true);
-    fetch(`${githubApiDomain}/search/users?q=${username}&page=0&per_page=10`, {
-      headers: {
-        Authorization: "Bearer " + githubApiKey,
-      },
-    })
-      .then((res) => res.json())
-      .then((response) => {
-        setUsers(
-          response.items.map((item: User) => ({
-            id: item.id,
-            login: item.login,
-            avatar_url: item.avatar_url,
-            repos_url: item.repos_url,
-            repos_data: [],
-            repos_open: false,
-            repos_loading: false,
-          }))
-        );
-      })
-      .catch((err) => {
-        console.log(err);
-      })
-      .finally(() => setLoading(false));
+    try {
+      const response = await axios(
+        `${githubApiDomain}/search/users?q=${username}&page=0&per_page=10`,
+        {
+          headers: {
+            Authorization: "Bearer " + githubApiKey,
+          },
+        }
+      );
+
+      setUsers(
+        response.data.items.map((item: User) => ({
+          id: item.id,
+          login: item.login,
+          avatar_url: item.avatar_url,
+          repos_url: item.repos_url,
+          repos_data: [],
+          repos_open: false,
+          repos_loading: false,
+        }))
+      );
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        apiErrorHandler({
+          message: err.response?.data?.message,
+          status: err.response?.status || 500,
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
   }, [username]);
 
-  const handleToggleUser = useCallback((user: User) => {
+  const handleToggleUser = useCallback(async (user: User) => {
     setUsers((curr) =>
       curr.map((item) => {
         if (item.id === user.id) {
@@ -70,41 +91,32 @@ function App() {
     );
 
     if (!user.repos_open && user.repos_data.length < 1) {
-      fetch(user.repos_url, {
-        headers: {
-          Authorization: "Bearer " + githubApiKey,
-        },
-      })
-        .then((res) => res.json())
-        .then((response) => {
-          setUsers((curr) =>
-            curr.map((item) => {
-              if (item.id === user.id) {
-                return {
-                  ...item,
-                  repos_data: response,
-                  repos_loading: false,
-                };
-              } else {
-                return item;
-              }
-            })
-          );
-        })
-        .catch((err) => {
-          console.log(err);
-        });
+      try {
+        const response = await axios(user.repos_url);
+
+        setUsers((curr) =>
+          curr.map((item) => {
+            if (item.id === user.id) {
+              return {
+                ...item,
+                repos_data: response.data,
+                repos_loading: false,
+              };
+            } else {
+              return item;
+            }
+          })
+        );
+      } catch (err) {
+        if (axios.isAxiosError(err)) {
+          apiErrorHandler({
+            message: err.response?.data?.message,
+            status: err.response?.status || 500,
+          });
+        }
+      }
     }
   }, []);
-
-  const handleKeyDownToogleUser = (
-    e: React.KeyboardEvent<HTMLDivElement>,
-    user: User
-  ) => {
-    if (e.key === "Enter") {
-      handleToggleUser(user);
-    }
-  };
 
   return (
     <div className="mx-auto my-0 max-w-xl">
@@ -200,6 +212,7 @@ function App() {
           )}
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 }
