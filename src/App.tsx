@@ -1,16 +1,16 @@
+import axios from "axios";
 import { useCallback, useState } from "react";
-import xMarkIcon from "./assets/icons/x-mark.svg";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import cevronDownIcon from "./assets/icons/cevron-down.svg";
 import cevronUpIcon from "./assets/icons/cevron-up.svg";
 import startIcon from "./assets/icons/star.svg";
-import { githubApiDomain, githubApiKey } from "./constant";
-import { User, Repo, Users } from "./model";
-import UserSkaleton from "./components/UserSkaleton";
+import xMarkIcon from "./assets/icons/x-mark.svg";
 import RepoSkaleton from "./components/RepoSkaleton";
+import UserSkaleton from "./components/UserSkaleton";
+import { githubApiDomain, githubApiKey } from "./constant";
+import { Repo, User, Users } from "./model";
 import { apiErrorHandler } from "./utils/api";
-import axios, { AxiosError } from "axios";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   const [users, setUsers] = useState<Users>([]);
